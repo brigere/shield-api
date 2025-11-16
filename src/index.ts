@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { useContainer, useExpressServer } from 'routing-controllers';
 import path from 'path';
 import Container from 'typedi';
-import { CustomErrorHandler } from './libs/middlewares/custom-error-handler';
+import { CustomErrorHandler } from './libs/middlewares/custom-error-handler.middleware';
 import { generateSwaggerSpec } from './swagger';
 import swaggerUi from 'swagger-ui-express';
 import { PrismaService } from './config/prisma';
@@ -27,7 +27,7 @@ prisma
     useExpressServer(app, {
       routePrefix: '/api',
       controllers: [path.join(__dirname + '/api/*/*.controller.*')],
-      middlewares: [CustomErrorHandler],
+      middlewares: [path.join(__dirname + '/libs/middlewares/*.middleware.ts')],
       validation: true,
       classTransformer: true,
       defaultErrorHandler: false,
