@@ -16,6 +16,7 @@ import { Service } from 'typedi';
 import { IsInt, IsNumberString, IsOptional } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { OpenAPI } from 'routing-controllers-openapi';
+import { CreateUserDTO } from './dto/create-user-sto';
 
 class PaginationDTO {
   @IsOptional()
@@ -58,7 +59,6 @@ export class UserController {
   @Get('/users')
   getAll(@QueryParams() pagination: PaginationDTO) {
     console.log(`limit: ${pagination.limit} | skip: ${pagination.skip}`);
-
     return this.userService.findAll();
   }
 
@@ -69,8 +69,9 @@ export class UserController {
   }
 
   @Post('/users')
-  post(@Body() user: any) {
-    return 'Saving user...';
+  post(@Body() user: CreateUserDTO) {
+    console.log(user);
+    return this.userService.createUser(user);
   }
 
   @Put('/users/:id')

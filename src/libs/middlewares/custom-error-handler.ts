@@ -7,6 +7,7 @@ import { Response } from 'express';
 export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
   error(error: any, request: any, response: Response, next: any) {
     if (error) {
+      console.error(error);
       return response.status(error?.httpCode || 500).json({
         message: error?.message,
       });
