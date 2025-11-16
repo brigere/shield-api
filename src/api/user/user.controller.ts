@@ -17,6 +17,7 @@ import { IsInt, IsNumberString, IsOptional } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { OpenAPI } from 'routing-controllers-openapi';
 import { CreateUserDTO } from './dto/create-user-sto';
+import { LoggerService } from '../../libs/services/logger.service';
 
 class PaginationDTO {
   @IsOptional()
@@ -33,7 +34,10 @@ class PaginationDTO {
 @Service()
 @Controller()
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private logger: LoggerService,
+  ) {}
 
   @OpenAPI({
     summary: 'Get all users',
@@ -58,7 +62,7 @@ export class UserController {
   })
   @Get('/users')
   getAll(@QueryParams() pagination: PaginationDTO) {
-    console.log(`limit: ${pagination.limit} | skip: ${pagination.skip}`);
+    this.logger.info('retrieving users', pagination);
     return this.userService.findAll();
   }
 
@@ -70,7 +74,6 @@ export class UserController {
 
   @Post('/users')
   post(@Body() user: CreateUserDTO) {
-    console.log(user);
     return this.userService.createUser(user);
   }
 

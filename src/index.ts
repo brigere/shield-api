@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { createExpressServer, useContainer, useExpressServer } from 'routing-controllers';
+import { useContainer, useExpressServer } from 'routing-controllers';
 import path from 'path';
 import Container from 'typedi';
 import { CustomErrorHandler } from './libs/middlewares/custom-error-handler';
@@ -7,17 +7,19 @@ import { generateSwaggerSpec } from './swagger';
 import swaggerUi from 'swagger-ui-express';
 import { PrismaService } from './config/prisma';
 import express from 'express';
+import { LoggerService } from './libs/services/logger.service';
 
 const PORT = process.env.PORT || 3000;
 
 useContainer(Container);
 
 const prisma = Container.get(PrismaService);
+const logger = Container.get(LoggerService);
 
 prisma
   .connect()
   .then(() => {
-    console.log('Database connected');
+    logger.info('Databse connected');
     const app = express();
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
@@ -43,8 +45,8 @@ prisma
       }),
     );
 
-    app.listen(PORT, () => console.log(`Process running at ${PORT}`));
+    app.listen(PORT, () => logger.info(`Process running at ${PORT}`));
   })
   .catch((e) => {
-    console.error('Somthing happenend while connecting to DB', e);
+    logger.fatal('Somthing happenend while connecting to DB', e);
   });
