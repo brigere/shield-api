@@ -9,11 +9,13 @@ import {
   Delete,
   QueryParams,
   HttpError,
+  HttpCode,
 } from 'routing-controllers';
 import { UserService } from './user.service';
 import { Service } from 'typedi';
 import { IsInt, IsNumberString, IsOptional } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { OpenAPI } from 'routing-controllers-openapi';
 
 class PaginationDTO {
   @IsOptional()
@@ -32,13 +34,27 @@ class PaginationDTO {
 export class UserController {
   constructor(private userService: UserService) {}
 
-  // @Get('/users')
-  // getAll(@QueryParam('limit') limit: number, @QueryParam('skip') skip: number) {
-  //   console.log(`limit: ${limit} | skip: ${skip}`);
-
-  //   return this.userService.findAll();
-  // }
-
+  @OpenAPI({
+    summary: 'Get all users',
+    description: 'Retrieve a paginated list of users',
+    tags: ['Users'],
+    parameters: [
+      {
+        name: 'limit',
+        in: 'query',
+        description: 'Number of items to return',
+        required: false,
+        schema: { type: 'integer', default: 10 },
+      },
+      {
+        name: 'skip',
+        in: 'query',
+        description: 'Number of items to skip',
+        required: false,
+        schema: { type: 'integer', default: 0 },
+      },
+    ],
+  })
   @Get('/users')
   getAll(@QueryParams() pagination: PaginationDTO) {
     console.log(`limit: ${pagination.limit} | skip: ${pagination.skip}`);
@@ -48,7 +64,6 @@ export class UserController {
 
   @Get('/users/:id')
   getOne(@Param('id') id: number) {
-    throw new HttpError(500, 'This is an error');
     console.log('get user', id);
     return 'This action returns user #' + id;
   }

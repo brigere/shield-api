@@ -2,7 +2,11 @@ import 'reflect-metadata';
 import { createExpressServer, useContainer } from 'routing-controllers';
 import path from 'path';
 import Container from 'typedi';
-import { CustomErrorHandler } from './libs/middlewares/validation-error';
+import { CustomErrorHandler } from './libs/middlewares/custom-error-handler';
+import { generateSwaggerSpec } from './swagger';
+import swaggerUi from 'swagger-ui-express';
+
+const PORT = process.env.PORT || 3000;
 
 useContainer(Container);
 
@@ -15,4 +19,17 @@ const app = createExpressServer({
   defaultErrorHandler: false,
 });
 
-app.listen(3000);
+const swaggerSpec = generateSwaggerSpec();
+
+// Serve Swagger UI
+app.use(
+  '/api',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customSiteTitle: 'Shield API Docs',
+    customCss: '.swagger-ui .topbar { display: none }',
+  }),
+);
+
+app.listen(PORT, () => console.log(`Process running at ${PORT}`));
