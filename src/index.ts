@@ -3,7 +3,7 @@ import { useContainer, useExpressServer } from 'routing-controllers';
 import path from 'path';
 import Container from 'typedi';
 import { CustomErrorHandler } from './libs/middlewares/custom-error-handler.middleware';
-import { generateSwaggerSpec } from './swagger';
+import { generateSwaggerSpec } from './config/swagger';
 import swaggerUi from 'swagger-ui-express';
 import { PrismaService } from './config/prisma';
 import express from 'express';
