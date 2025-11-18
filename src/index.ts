@@ -2,12 +2,12 @@ import 'reflect-metadata';
 import { useContainer, useExpressServer } from 'routing-controllers';
 import path from 'path';
 import Container from 'typedi';
-import { CustomErrorHandler } from './libs/middlewares/custom-error-handler.middleware';
 import { generateSwaggerSpec } from './config/swagger';
 import swaggerUi from 'swagger-ui-express';
 import { PrismaService } from './config/prisma';
 import express from 'express';
 import { LoggerService } from './libs/services/logger.service';
+import { CurrentUser } from './libs/decorators/user.decorator';
 
 const PORT = process.env.PORT || 3000;
 
@@ -31,6 +31,7 @@ prisma
       validation: true,
       classTransformer: true,
       defaultErrorHandler: false,
+      currentUserChecker: CurrentUser,
     });
 
     // Serve Swagger UI

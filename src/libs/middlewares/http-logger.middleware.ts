@@ -2,9 +2,10 @@ import { Middleware, ExpressMiddlewareInterface } from 'routing-controllers';
 import { Service } from 'typedi';
 import { Request, Response, NextFunction } from 'express';
 import { LoggerService } from '../services/logger.service';
+import { MIDDLEWARE_PRIORITY } from './priority';
 
 @Service()
-@Middleware({ type: 'before', priority: 1 })
+@Middleware({ type: 'before', priority: MIDDLEWARE_PRIORITY.logger })
 export class HttpLoggerMiddleware implements ExpressMiddlewareInterface {
   constructor(private logger: LoggerService) {}
 

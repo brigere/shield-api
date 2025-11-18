@@ -10,6 +10,8 @@ import {
   QueryParams,
   HttpError,
   HttpCode,
+  UseBefore,
+  Req,
 } from 'routing-controllers';
 import { UserService } from './user.service';
 import { Service } from 'typedi';
@@ -18,6 +20,8 @@ import { Transform, Type } from 'class-transformer';
 import { OpenAPI } from 'routing-controllers-openapi';
 import { CreateUserDTO } from './dto/create-user-sto';
 import { LoggerService } from '../../libs/services/logger.service';
+import { AuthMiddleware } from '../../libs/middlewares/auth.middleware';
+import { AuthenticatedUser, CurrentUser } from '../../libs/decorators/user.decorator';
 
 class PaginationDTO {
   @IsOptional()
@@ -60,8 +64,10 @@ export class UserController {
       },
     ],
   })
+  @UseBefore(AuthMiddleware)
   @Get('/users')
-  getAll(@QueryParams() pagination: PaginationDTO) {
+  getAll(@QueryParams() pagination: PaginationDTO, @CurrentUser() user: AuthenticatedUser) {
+    this.logger.info('USER', user);
     this.logger.info('retrieving users', pagination);
     return this.userService.findAll();
   }
