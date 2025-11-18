@@ -8,6 +8,7 @@ import { PrismaService } from './config/prisma';
 import express from 'express';
 import { LoggerService } from './libs/services/logger.service';
 import { CurrentUser } from './libs/decorators/user.decorator';
+import { RedisService } from './config/redis';
 
 const PORT = process.env.PORT || 3000;
 
@@ -15,11 +16,15 @@ useContainer(Container);
 
 const prisma = Container.get(PrismaService);
 const logger = Container.get(LoggerService);
+const redis = Container.get(RedisService);
 
-prisma
-  .connect()
-  .then(() => {
-    logger.info('Databse connected');
+async function bootstrap() {
+  try {
+    await prisma.connect();
+    logger.info('Database connected successfully.');
+
+    await redis.connect();
+
     const app = express();
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
@@ -34,7 +39,6 @@ prisma
       currentUserChecker: CurrentUser,
     });
 
-    // Serve Swagger UI
     const swaggerSpec = generateSwaggerSpec();
     app.use(
       '/api/swagger-ui',
@@ -43,11 +47,15 @@ prisma
         explorer: true,
         customSiteTitle: 'Shield API Docs',
         customCss: '.swagger-ui .topbar { display: none }',
+        swaggerOptions: { persistAuthorization: true },
       }),
     );
 
-    app.listen(PORT, () => logger.info(`Process running at ${PORT}`));
-  })
-  .catch((e) => {
-    logger.fatal('Somthing happenend while connecting to DB', e);
-  });
+    app.listen(PORT, () => logger.info(`Process running at http://localhost:${PORT}`));
+  } catch (e) {
+    logger.fatal('Failed to start application due to connection error.', e);
+    process.exit(1);
+  }
+}
+
+bootstrap();

@@ -5,6 +5,15 @@ import { LoggerService } from './logger.service';
 export interface TokenPayload {
   userId: number;
   email: string;
+  tokenId?: number;
+}
+
+export interface DecodedToken {
+  userId: number;
+  email: string;
+  tokenId: number;
+  iat: number;
+  exp: number;
 }
 
 export interface TokenResponse {
@@ -37,11 +46,12 @@ export class JwtService {
    * Generate access and refresh tokens
    */
   generateTokens(payload: TokenPayload): TokenResponse {
-    const accessToken = jwt.sign(payload, this.jwtSecret, {
+    const tokenId = crypto.randomUUID();
+    const accessToken = jwt.sign({ ...payload, tokenId }, this.jwtSecret, {
       expiresIn: this.hoursToSeconds(this.jwtExpiresIn),
     });
 
-    const refreshToken = jwt.sign(payload, this.jwtRefreshSecret, {
+    const refreshToken = jwt.sign({ ...payload, tokenId }, this.jwtRefreshSecret, {
       expiresIn: this.daysToSeconds(Number(this.jwtRefreshExpiresIn)),
     });
 
@@ -57,9 +67,9 @@ export class JwtService {
   /**
    * Verify access token
    */
-  verifyAccessToken(token: string): TokenPayload | null {
+  verifyAccessToken(token: string): DecodedToken | null {
     try {
-      const decoded = jwt.verify(token, this.jwtSecret) as TokenPayload;
+      const decoded = jwt.verify(token, this.jwtSecret) as DecodedToken;
       return decoded;
     } catch (error) {
       this.logger.warn('Access token verification failed', { error: (error as Error).message });
@@ -83,9 +93,9 @@ export class JwtService {
   /**
    * Decode token without verification (useful for debugging)
    */
-  decodeToken(token: string): TokenPayload | null {
+  decodeToken(token: string): DecodedToken | null {
     try {
-      return jwt.decode(token) as TokenPayload;
+      return jwt.decode(token) as DecodedToken;
     } catch (error) {
       return null;
     }

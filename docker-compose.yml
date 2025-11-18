@@ -12,6 +12,15 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine # Lightweight Redis image
+    container_name: shield_redis
+    command: redis-server --appendonly yes # Ensure data persistence (useful for denylists)
+    ports:
+      - '6379:6379' # Expose Redis's default port
+    volumes:
+      - redis_data:/data # Mount volume for persistent Redis data
 
 volumes:
   postgres_data:
+  redis_data:

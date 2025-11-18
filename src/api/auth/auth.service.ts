@@ -5,6 +5,7 @@ import { RegisterDTO } from './types';
 import { PasswordService } from '../../libs/services/password.service';
 import { HttpError, UnauthorizedError } from 'routing-controllers';
 import { JwtService } from '../../libs/services/jwt.service';
+import { RedisService } from '../../config/redis';
 
 @Service()
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
     private db: PrismaService,
     private passwordService: PasswordService,
     private jwtService: JwtService,
+    private redisService: RedisService,
   ) {}
 
   public async authenticate(email: string, password: string) {
@@ -70,5 +72,29 @@ export class AuthService {
     });
 
     return { id: user.id, email: user.email };
+  }
+
+  public async signOut(accessToken: string): Promise<boolean> {
+    const payload = this.jwtService.decodeToken(accessToken);
+
+    if (!payload) {
+      return false;
+    }
+
+    const expirationInDays = Number(process.env.JWT_REFRESH_EXPIRES_IN_DAYS) || 7;
+    const expirationInSeconds = expirationInDays * 24 * 60 * 60;
+
+    try {
+      await this.redisService.client.set(
+        `revoked:${payload.tokenId}`, // Use a prefix to distinguish denylist entries
+        'true', // The value can be anything, 'true' is fine
+        { EX: expirationInSeconds }, // Set expiration time (TTL)
+      );
+      this.logger.info('User logged in succesfully', payload);
+      return true;
+    } catch (e: any) {
+      this.logger.error('error while trying to set value to Redis', e);
+      return false;
+    }
   }
 }
