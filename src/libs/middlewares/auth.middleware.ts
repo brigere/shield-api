@@ -3,7 +3,7 @@ import { Service } from 'typedi';
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../services/jwt.service';
 import { LoggerService } from '../services/logger.service';
-import { MIDDLEWARE_PRIORITY } from './priority';
+import { RedisService } from '../../config/redis';
 
 // Extend Express Request type to include user
 declare global {
@@ -22,9 +22,10 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
   constructor(
     private jwtService: JwtService,
     private logger: LoggerService,
+    private redis: RedisService,
   ) {}
 
-  use(request: Request, response: Response, next: NextFunction) {
+  async use(request: Request, response: Response, next: NextFunction) {
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
@@ -52,6 +53,16 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
 
     if (!payload) {
       this.logger.warn('Invalid or expired token');
+      return response.status(401).json({
+        status: 'error',
+        message: 'Invalid or expired token',
+      });
+    }
+
+    const revoked = await this.redis.client.get(`revoked:${payload.tokenId}`);
+
+    if (revoked) {
+      this.logger.warn('Revoked token was provijded');
       return response.status(401).json({
         status: 'error',
         message: 'Invalid or expired token',
