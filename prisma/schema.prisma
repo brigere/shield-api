@@ -19,5 +19,18 @@ model User {
   email   String   @unique
   password    String
 
+  wallets Wallet[]
+
   @@map("users")
+}
+
+model Wallet {
+  id      Int     @id @default(autoincrement())
+  user_id Int
+  tag     String?
+  chain   String
+  address String  @unique
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@map("wallets")
 }
