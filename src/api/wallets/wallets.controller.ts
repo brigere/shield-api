@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Post, UseBefore } from 'routing-controllers';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  NotFoundError,
+  Param,
+  Post,
+  UseBefore,
+} from 'routing-controllers';
 import { Service } from 'typedi';
 import { LoggerService } from '../../libs/services/logger.service';
 import { PrismaService } from '../../config/prisma';
@@ -9,7 +18,7 @@ import { AuthenticatedUser, CurrentUser } from '../../libs/decorators/user.decor
 import { WalletDTO } from './types';
 
 @Service()
-@Controller()
+@Controller('/wallets')
 export class WalletController {
   constructor(
     private loggerService: LoggerService,
@@ -23,10 +32,10 @@ export class WalletController {
     tags: ['Wallets'],
   })
   @UseBefore(AuthMiddleware)
-  @Get('/wallets')
+  @Get()
   getAll(@CurrentUser() user: AuthenticatedUser) {
-    this.loggerService.info(`Retrieving wallets for user ID: ${user.id}`);
-    return this.walletService.findAllByUserId(user.id);
+    this.loggerService.info(`Retrieving wallets for user ID: ${user.userId}`);
+    return this.walletService.findAllByUserId(user.userId);
   }
 
   @OpenAPI({
@@ -45,7 +54,7 @@ export class WalletController {
     //   required: true,
     // },
   })
-  @Post('/wallets')
+  @Post()
   @HttpCode(201) // 201 Created is the standard status code for successful creation
   @UseBefore(AuthMiddleware)
   async create(@Body() walletData: WalletDTO, @CurrentUser() user: AuthenticatedUser) {
@@ -54,5 +63,34 @@ export class WalletController {
     const newWallet = await this.walletService.createWallet(user.userId, walletData);
 
     return newWallet;
+  }
+
+  @OpenAPI({
+    summary: 'Get a single wallet by ID',
+    description: 'Retrieves a specific wallet belonging to the authenticated user.',
+    tags: ['Wallets'],
+    // Define the response for 404
+    responses: {
+      404: {
+        description: 'Wallet not found or does not belong to the user.',
+      },
+    },
+  })
+  @UseBefore(AuthMiddleware)
+  @Get('/:id') // Note the dynamic segment ':id'
+  async getOne(@Param('id') id: number, @CurrentUser() user: AuthenticatedUser) {
+    this.loggerService.info(`User ${user.userId} attempting to retrieve wallet ID: ${id}`);
+
+    // Call service to find the wallet, passing both IDs for ownership check
+    const wallet = await this.walletService.findOneByIdAndUserId(id, user.userId);
+
+    if (!wallet) {
+      this.loggerService.warn(
+        `Wallet ID ${id} not found or unauthorized access attempt by user ${user.userId}.`,
+      );
+      throw new NotFoundError('Wallet not found or access denied.');
+    }
+
+    return wallet;
   }
 }

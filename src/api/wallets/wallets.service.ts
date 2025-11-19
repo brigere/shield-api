@@ -55,4 +55,24 @@ export class WalletService {
     this.logger.info(`Wallet created successfully: ID ${newWallet.id}`);
     return newWallet;
   }
+
+  /**
+   * Retrieves a single wallet by its ID, ensuring it belongs to the specified user.
+   * This enforces ownership control.
+   * * @param walletId The ID of the wallet to find.
+   * @param userId The ID of the authenticated user (owner).
+   * @returns A promise that resolves to the Wallet object, or null if not found/unauthorized.
+   */
+  public async findOneByIdAndUserId(walletId: number, userId: number): Promise<Wallet | null> {
+    this.logger.info(`Checking wallet ID ${walletId} for ownership by user ID ${userId}.`);
+
+    const wallet = await this.db.wallet.findFirst({
+      where: {
+        id: walletId,
+        user_id: userId,
+      },
+    });
+
+    return wallet;
+  }
 }
