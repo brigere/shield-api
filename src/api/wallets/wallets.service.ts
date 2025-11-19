@@ -2,7 +2,7 @@ import { Service } from 'typedi';
 import { LoggerService } from '../../libs/services/logger.service';
 import { PrismaService } from '../../config/prisma';
 import { Wallet } from '@prisma/client';
-import { WalletDTO, WalletUpdateDTO } from './types';
+import { CreatedWallet, WalletDTO, WalletUpdateDTO } from './types';
 import { NotFoundError } from 'routing-controllers';
 
 @Service()
@@ -39,17 +39,19 @@ export class WalletService {
    * @param data The validated wallet data (chain, address, tag).
    * @returns A promise that resolves to the newly created Wallet object.
    */
-  public async createWallet(userId: number, data: WalletDTO): Promise<Wallet> {
+  public async createWallet(userId: number, data: WalletDTO): Promise<CreatedWallet> {
     this.logger.info(`Creating wallet for user ID: ${userId} on chain: ${data.chain}`);
 
-    // Prisma's create method handles inserting the record.
     const newWallet = await this.db.wallet.create({
       data: {
-        // Link the wallet to the user via the foreign key
         user_id: userId,
-
-        // Spread the validated data from the DTO
         ...data,
+      },
+      select: {
+        id: true,
+        tag: true,
+        chain: true,
+        address: true,
       },
     });
 
@@ -124,8 +126,6 @@ export class WalletService {
     );
 
     try {
-      // CRITICAL: The delete operation uses a 'where' clause that must match
-      // both the wallet ID and the user ID (ownership check).
       await this.db.wallet.delete({
         where: {
           id: walletId,
@@ -135,13 +135,6 @@ export class WalletService {
 
       this.logger.info(`Wallet ID ${walletId} deleted successfully.`);
     } catch (error: any) {
-      // Prisma throws a unique error (P2025) if the record for deletion is not found
-      if (error.code === 'P2025') {
-        // If it's not found, it's either the ID is wrong, or the user is not the owner.
-        // We report this as a 404 access denial.
-        throw new NotFoundError('Wallet not found or access denied.');
-      }
-      // Re-throw any other database errors
       throw error;
     }
   }

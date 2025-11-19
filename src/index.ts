@@ -26,8 +26,6 @@ async function bootstrap() {
     await redis.connect();
 
     const app = express();
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
 
     useExpressServer(app, {
       routePrefix: '/api',

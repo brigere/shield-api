@@ -1,14 +1,13 @@
 import 'reflect-metadata';
 import {
-  Controller,
   Post,
   Body,
   HttpCode,
   BadRequestError,
   Req,
-  Res,
   UseBefore,
   HttpError,
+  JsonController,
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Service } from 'typedi';
@@ -16,11 +15,11 @@ import { JwtService } from '../../libs/services/jwt.service';
 import { LoggerService } from '../../libs/services/logger.service';
 import { AuthService } from './auth.service';
 import { AuthResponse, LoginDTO, RegisterDTO } from './types';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { AuthMiddleware } from '../../libs/middlewares/auth.middleware';
 
 @Service()
-@Controller('/auth')
+@JsonController('/auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
@@ -91,7 +90,7 @@ export class AuthController {
     const signedOut = await this.authService.signOut(accessToken);
 
     if (signedOut) {
-      return { message: 'Signed out successfully. Tokens revoked.' };
+      return { status: 'success', message: 'Signed out successfully. Tokens revoked.' };
     } else {
       throw new HttpError(500, 'Something happened, try again');
     }

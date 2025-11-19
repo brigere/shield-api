@@ -1,5 +1,6 @@
 // src/dtos/WalletDTO.ts
 
+import { Wallet } from '@prisma/client';
 import { IsString, IsNotEmpty, IsOptional, Length } from 'class-validator';
 import { OpenAPI } from 'routing-controllers-openapi';
 
@@ -10,13 +11,10 @@ export class WalletDTO {
   @IsString()
   @IsNotEmpty()
   @Length(3, 50)
-  // Example: Ethereum, Bitcoin, Solana
   chain: string;
 
   @IsString()
   @IsNotEmpty()
-  // Validation for the address format itself would require custom decorators,
-  // but we enforce string and non-empty here.
   address: string;
 
   @IsString()
@@ -43,3 +41,5 @@ export class WalletUpdateDTO {
   @IsNotEmpty()
   address: string;
 }
+
+export type CreatedWallet = Omit<Wallet, 'user_id'>;
