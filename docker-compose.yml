@@ -11,16 +11,53 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
-    image: redis:7-alpine # Lightweight Redis image
+    image: redis:7-alpine
     container_name: shield_redis
-    command: redis-server --appendonly yes # Ensure data persistence (useful for denylists)
+    command: redis-server --appendonly yes
     ports:
-      - '6379:6379' # Expose Redis's default port
+      - '6379:6379'
     volumes:
-      - redis_data:/data # Mount volume for persistent Redis data
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shield_app
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/shield_db
+      REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: your-secret-key-change-in-production
+      JWT_REFRESH_SECRET: your-refresh-secret-key-change-in-production
+      JWT_EXPIRES_IN_HOURS: 24
+      JWT_REFRESH_EXPIRES_IN_DAYS: 7
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && npm start"
 
 volumes:
-  postgres_data:
+  # postgres_data:
   redis_data:
