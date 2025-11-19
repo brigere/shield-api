@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   NotFoundError,
   Param,
   Post,
   Put,
+  Res,
   UseBefore,
 } from 'routing-controllers';
 import { Service } from 'typedi';
@@ -17,6 +19,7 @@ import { AuthMiddleware } from '../../libs/middlewares/auth.middleware';
 import { WalletService } from './wallets.service';
 import { AuthenticatedUser, CurrentUser } from '../../libs/decorators/user.decorator';
 import { WalletDTO, WalletUpdateDTO } from './types';
+import { Response } from 'express';
 
 @Service()
 @Controller('/wallets')
@@ -134,6 +137,37 @@ export class WalletController {
       }
       // Handle other potential errors (e.g., database error)
       throw new Error(`Failed to update wallet: ${e.message}`);
+    }
+  }
+
+  @OpenAPI({
+    summary: 'Delete a wallet by ID',
+    description: 'Deletes a specific wallet belonging to the authenticated user.',
+    tags: ['Wallets'],
+    responses: {
+      200: { description: 'Wallet deleted successfully (No Content).' },
+      404: { description: 'Wallet not found or does not belong to the user.' },
+    },
+  })
+  @Delete('/:id')
+  @HttpCode(204) // 204 No Content is the standard status code for successful deletion
+  @UseBefore(AuthMiddleware)
+  async remove(
+    @Param('id') id: number,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    this.loggerService.info(`User ${user.userId} attempting to delete wallet ID: ${id}.`);
+
+    try {
+      await this.walletService.deleteWallet(id, user.userId);
+      res.status(200).json({ description: 'Wallet deleted successfully (No Content).' });
+    } catch (e: any) {
+      if (e instanceof NotFoundError) {
+        throw e;
+      }
+      // Handle other potential errors
+      throw new Error(`Failed to delete wallet: ${e.message}`);
     }
   }
 }
