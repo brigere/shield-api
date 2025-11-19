@@ -10,6 +10,6 @@ export function CurrentUser() {
 }
 
 export type AuthenticatedUser = {
-  id: number;
+  userId: number;
   email: string;
 };
