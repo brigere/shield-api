@@ -80,6 +80,10 @@ export class AuthController {
   @UseBefore(AuthMiddleware)
   @Post('/signout')
   @HttpCode(200)
+  @OpenAPI({
+    summary: 'Logout user',
+    tags: ['Authentication'],
+  })
   public async signout(@Req() req: Request) {
     // 1. Get the Access Token from the Authorization header
     const authHeader = req.headers.authorization;
