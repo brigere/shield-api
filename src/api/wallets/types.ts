@@ -22,6 +22,24 @@ export class WalletDTO {
   @IsString()
   @IsOptional()
   @Length(1, 100)
-  // Optional label for the wallet (e.g., "Trading Wallet")
   tag?: string;
+}
+
+@OpenAPI({
+  description: 'Data required to update an existing wallet address.',
+})
+export class WalletUpdateDTO {
+  @IsString()
+  @IsOptional()
+  @Length(1, 100)
+  tag?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(3, 50)
+  chain: string;
+
+  @IsString()
+  @IsNotEmpty()
+  address: string;
 }

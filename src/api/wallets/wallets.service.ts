@@ -2,7 +2,8 @@ import { Service } from 'typedi';
 import { LoggerService } from '../../libs/services/logger.service';
 import { PrismaService } from '../../config/prisma';
 import { Wallet } from '@prisma/client';
-import { WalletDTO } from './types';
+import { WalletDTO, WalletUpdateDTO } from './types';
+import { NotFoundError } from 'routing-controllers';
 
 @Service()
 export class WalletService {
@@ -74,5 +75,41 @@ export class WalletService {
     });
 
     return wallet;
+  }
+
+  /**
+   * Updates a wallet by ID, ensuring it belongs to the specified user.
+   * * @param walletId The ID of the wallet to update.
+   * @param userId The ID of the authenticated user (owner).
+   * @param data The validated update data.
+   * @returns A promise that resolves to the updated Wallet object.
+   */
+  public async updateWallet(
+    walletId: number,
+    userId: number,
+    data: WalletUpdateDTO,
+  ): Promise<Wallet> {
+    this.logger.info(`Attempting to update wallet ID ${walletId} for user ID ${userId}.`);
+
+    try {
+      // CRITICAL: Use findUnique/findFirst/update where to combine the ID and User ID
+      // This is a single, atomic operation that enforces ownership.
+      const updatedWallet = await this.db.wallet.update({
+        where: {
+          id: walletId,
+          user_id: userId, // CRITICAL: Only allow update if this wallet belongs to this user
+        },
+        data: {
+          ...data,
+        },
+      });
+
+      return updatedWallet;
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundError('Wallet not found or access denied.');
+      }
+      throw error;
+    }
   }
 }

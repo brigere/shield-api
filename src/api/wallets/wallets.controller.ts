@@ -6,6 +6,7 @@ import {
   NotFoundError,
   Param,
   Post,
+  Put,
   UseBefore,
 } from 'routing-controllers';
 import { Service } from 'typedi';
@@ -15,7 +16,7 @@ import { OpenAPI } from 'routing-controllers-openapi';
 import { AuthMiddleware } from '../../libs/middlewares/auth.middleware';
 import { WalletService } from './wallets.service';
 import { AuthenticatedUser, CurrentUser } from '../../libs/decorators/user.decorator';
-import { WalletDTO } from './types';
+import { WalletDTO, WalletUpdateDTO } from './types';
 
 @Service()
 @Controller('/wallets')
@@ -92,5 +93,47 @@ export class WalletController {
     }
 
     return wallet;
+  }
+
+  @OpenAPI({
+    summary: 'Update an existing wallet',
+    description:
+      'Updates the details (tag, chain, address) of a specific wallet belonging to the authenticated user.',
+    tags: ['Wallets'],
+    responses: {
+      404: { description: 'Wallet not found or does not belong to the user.' },
+    },
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: {
+            $ref: '#/components/schemas/WalletUpdateDTO',
+          },
+        },
+      },
+      required: true,
+    },
+  })
+  @Put('/:id')
+  @UseBefore(AuthMiddleware)
+  async update(
+    @Param('id') id: number,
+    @Body() updateData: WalletUpdateDTO, // Use the new update DTO
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    this.loggerService.info(`User ${user.userId} attempting to update wallet ID: ${id}.`);
+
+    try {
+      // Pass the wallet ID, user ID, and update data to the service
+      const updatedWallet = await this.walletService.updateWallet(id, user.userId, updateData);
+
+      return updatedWallet;
+    } catch (e: any) {
+      if (e instanceof NotFoundError) {
+        throw e;
+      }
+      // Handle other potential errors (e.g., database error)
+      throw new Error(`Failed to update wallet: ${e.message}`);
+    }
   }
 }
